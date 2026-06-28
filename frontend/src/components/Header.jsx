@@ -1,5 +1,6 @@
 import React from 'react';
-import { LogOut, User, UserCheck, ShieldAlert } from 'lucide-react';
+import { LogOut, UserCheck } from 'lucide-react';
+import { ROLE_LABELS } from '../constants/roles';
 
 export default function Header({ email, role, onLogout }) {
   return (
@@ -36,12 +37,11 @@ export default function Header({ email, role, onLogout }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-        {/* User Profile and Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '13px', fontWeight: '600' }}>{email}</p>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              สิทธิ์การใช้งาน: {role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : role === 'dean' ? 'คณบดี' : role === 'director' ? 'ผอ.สำนักงานวิชาการ' : role === 'academic' ? 'วิชาการ' : 'อาจารย์ (ผู้สอน)'}
+              สิทธิ์การใช้งาน: {ROLE_LABELS[role] || role}
             </p>
           </div>
           <button

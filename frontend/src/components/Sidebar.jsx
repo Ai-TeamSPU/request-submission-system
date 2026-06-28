@@ -5,45 +5,44 @@ import {
   Database, Scroll, Shield
 } from 'lucide-react';
 
-export default function Sidebar({ role, activeMenu, onMenuChange }) {
-  // Define menus with roles they are visible to
-  const menuCategories = [
-    {
-      title: 'อาจารย์',
-      roles: ['teacher', 'admin'],
-      items: [
-        { id: 'checkin', name: 'เช็คอิน', icon: CheckSquare },
-        { id: 'my-requests', name: 'คำขออนุมัติของฉัน', icon: ClipboardList }
-      ]
-    },
-    {
-      title: 'คณบดี',
-      roles: ['dean', 'admin'],
-      items: [
-        { id: 'pending-approvals', name: 'รออนุมัติ', icon: Clock },
-        { id: 'approved-history', name: 'ประวัติคำขอที่อนุมัติ', icon: CheckCircle2 }
-      ]
-    },
-    {
-      title: 'ผอ.สำนักงานวิชาการ / ผอ.กลุ่มงาน / วิชาการ',
-      roles: ['director', 'academic', 'admin'],
-      items: [
-        { id: 'approved-requests', name: 'คำขอที่อนุมัติเเล้ว', icon: BookOpen },
-        { id: 'email-alerts', name: 'อีเมลเเจ้งเตือน', icon: Mail }
-      ]
-    },
-    {
-      title: 'Admin',
-      roles: ['admin'],
-      items: [
-        { id: 'overview', name: 'ภาพรวม', icon: LayoutDashboard },
-        { id: 'import-excel', name: 'นำเข้า Excel', icon: FileSpreadsheet },
-        { id: 'master-data', name: 'ข้อมูลหลัก', icon: Database },
-        { id: 'system-logs', name: 'บันทึกระบบ', icon: Scroll }
-      ]
-    }
-  ];
+const MENU_CATEGORIES = [
+  {
+    title: 'อาจารย์',
+    roles: ['teacher', 'dean', 'admin'],
+    items: [
+      { id: 'checkin', name: 'เช็คอิน', icon: CheckSquare },
+      { id: 'my-requests', name: 'คำขออนุมัติของฉัน', icon: ClipboardList },
+    ],
+  },
+  {
+    title: 'คณบดี',
+    roles: ['dean', 'admin'],
+    items: [
+      { id: 'pending-approvals', name: 'รออนุมัติ', icon: Clock },
+      { id: 'approved-history', name: 'ประวัติคำขอที่อนุมัติ', icon: CheckCircle2 },
+    ],
+  },
+  {
+    title: 'ผอ.สำนักงานวิชาการ / ผอ.กลุ่มงาน / วิชาการ',
+    roles: ['director', 'academic', 'admin'],
+    items: [
+      { id: 'approved-requests', name: 'คำขอที่อนุมัติเเล้ว', icon: BookOpen },
+      { id: 'overview', name: 'ภาพรวม', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'Admin',
+    roles: ['admin'],
+    items: [
+      { id: 'email-alerts', name: 'อีเมลเเจ้งเตือน', icon: Mail },
+      { id: 'import-excel', name: 'นำเข้า Excel', icon: FileSpreadsheet },
+      { id: 'master-data', name: 'ข้อมูลหลัก', icon: Database },
+      { id: 'system-logs', name: 'บันทึกระบบ', icon: Scroll },
+    ],
+  },
+];
 
+export default function Sidebar({ role, activeMenu, onMenuChange }) {
   return (
     <aside className="glass-panel sidebar" style={{
       width: '280px',
@@ -56,7 +55,6 @@ export default function Sidebar({ role, activeMenu, onMenuChange }) {
       top: '24px',
       overflowY: 'auto'
     }}>
-      {/* Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '30px', paddingLeft: '8px' }}>
         <div style={{
           background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
@@ -80,10 +78,8 @@ export default function Sidebar({ role, activeMenu, onMenuChange }) {
         </div>
       </div>
 
-      {/* Menus List */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {menuCategories.map((cat, catIdx) => {
-          // If the user's role is not allowed to see this category, skip
+        {MENU_CATEGORIES.map((cat, catIdx) => {
           if (!cat.roles.includes(role)) return null;
 
           return (

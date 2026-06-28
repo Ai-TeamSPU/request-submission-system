@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, X, Eye, Calendar, MapPin, User, FileImage } from 'lucide-react';
+import { api } from '../utils/api';
 
-export default function RequestsTable({ requests, role, userEmail, onApprove, onReject }) {
+export default function RequestsTable({ requests, role, userEmail, onApprove, onReject, onComplete }) {
   const [selectedReq, setSelectedReq] = useState(null);
   const [managerNote, setManagerNote] = useState('');
   const [errorNote, setErrorNote] = useState('');
+  const [attachmentData, setAttachmentData] = useState(null);
+  const [loadingAttachment, setLoadingAttachment] = useState(false);
 
   // Filter requests based on role
   const displayedRequests = role === 'employee' 
@@ -15,6 +19,8 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
     switch (status) {
       case 'Approved':
         return <span className="badge badge-approved">อนุมัติแล้ว</span>;
+      case 'Completed':
+        return <span className="badge badge-approved" style={{ background: 'rgba(59,130,246,0.15)', color: 'hsl(217,90%,70%)' }}>เช็กอินเรียบร้อย</span>;
       case 'Rejected':
         return <span className="badge badge-rejected">ปฏิเสธ</span>;
       default:
@@ -22,16 +28,26 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
     }
   };
 
-  const openDetails = (req) => {
+  const openDetails = async (req) => {
     setSelectedReq(req);
     setManagerNote(req.managerNote || '');
     setErrorNote('');
+    setAttachmentData(null);
+    if (req.attachmentName) {
+      setLoadingAttachment(true);
+      try {
+        const res = await api.getAttachment(req.id);
+        setAttachmentData(res.attachmentData || null);
+      } catch {}
+      setLoadingAttachment(false);
+    }
   };
 
   const closeDetails = () => {
     setSelectedReq(null);
     setManagerNote('');
     setErrorNote('');
+    setAttachmentData(null);
   };
 
   const handleAction = async (isApprove) => {
@@ -90,13 +106,42 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
                   <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-main)' }}>{req.date}</td>
                   <td style={{ padding: '14px 8px' }}>{getStatusBadge(req.status)}</td>
                   <td style={{ padding: '14px 8px' }}>
-                    <button
-                      onClick={() => openDetails(req)}
-                      className="btn btn-secondary"
-                      style={{ padding: '6px 12px', fontSize: '12px', gap: '4px' }}
-                    >
-                      <Eye size={14} /> รายละเอียด
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => openDetails(req)}
+                        className="btn btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px', gap: '4px' }}
+                      >
+                        <Eye size={14} /> รายละเอียด
+                      </button>
+                      {role === 'manager' && req.status === 'Pending' && (
+                        <>
+                          <button
+                            onClick={() => openDetails(req)}
+                            className="btn btn-success"
+                            style={{ padding: '6px 10px', fontSize: '12px', gap: '4px' }}
+                          >
+                            <Check size={14} /> อนุมัติ
+                          </button>
+                          <button
+                            onClick={() => openDetails(req)}
+                            className="btn btn-danger"
+                            style={{ padding: '6px 10px', fontSize: '12px', gap: '4px' }}
+                          >
+                            <X size={14} /> ปฏิเสธ
+                          </button>
+                        </>
+                      )}
+                      {role === 'academic' && req.status === 'Approved' && (
+                        <button
+                          onClick={() => openDetails(req)}
+                          className="btn btn-primary"
+                          style={{ padding: '6px 10px', fontSize: '12px', gap: '4px' }}
+                        >
+                          <Check size={14} /> ยืนยันเช็กอิน
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -105,8 +150,8 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
         </table>
       </div>
 
-      {/* Details / Action Modal */}
-      {selectedReq && (
+      {/* Details / Action Modal — rendered via portal to escape backdrop-filter containing block */}
+      {selectedReq && createPortal(
         <div style={{
           position: 'fixed',
           top: 0,
@@ -141,9 +186,9 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
                 </span>
               </div>
               <div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>คณะ / สาขา</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>คณะ / วิทยาลัย</span>
                 <span style={{ fontSize: '14px', fontWeight: '500', display: 'block', marginTop: '4px', color: 'var(--text-main)' }}>
-                  {selectedReq.faculty} - {selectedReq.department}
+                  {selectedReq.faculty}
                 </span>
               </div>
               <div>
@@ -173,9 +218,52 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
             </div>
 
             {selectedReq.attachmentName && (
-              <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'rgba(138, 75, 243, 0.05)', borderRadius: '8px', border: '1px solid var(--border-glow)' }}>
-                <FileImage size={18} color="var(--color-primary)" />
-                <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>ไฟล์แนบ: <strong>{selectedReq.attachmentName}</strong></span>
+              <div style={{ marginBottom: '20px', padding: '12px', background: 'rgba(138, 75, 243, 0.05)', borderRadius: '8px', border: '1px solid var(--border-glow)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: attachmentData ? '10px' : '0' }}>
+                  <FileImage size={18} color="var(--color-primary)" />
+                  <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>หลักฐานแนบ: <strong>{selectedReq.attachmentName}</strong></span>
+                </div>
+                {loadingAttachment && (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '10px 0' }}>กำลังโหลดไฟล์แนบ...</p>
+                )}
+                {attachmentData && (
+                  attachmentData.startsWith('data:image') ? (
+                    <img
+                      src={attachmentData}
+                      alt={selectedReq.attachmentName}
+                      style={{ maxWidth: '100%', borderRadius: '6px', border: '1px solid var(--border-light)' }}
+                    />
+                  ) : attachmentData.startsWith('data:application/pdf') ? (
+                    <iframe
+                      src={attachmentData}
+                      title={selectedReq.attachmentName}
+                      style={{ width: '100%', height: '500px', borderRadius: '6px', border: '1px solid var(--border-light)' }}
+                    />
+                  ) : (
+                    <a
+                      href={attachmentData}
+                      download={selectedReq.attachmentName}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '13px', gap: '6px', marginTop: '4px' }}
+                    >
+                      ดาวน์โหลดไฟล์แนบ
+                    </a>
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Academic Complete Action */}
+            {role === 'academic' && selectedReq.status === 'Approved' && (
+              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button onClick={closeDetails} className="btn btn-secondary">ปิด</button>
+                <button
+                  onClick={async () => { await onComplete(selectedReq.id); closeDetails(); }}
+                  className="btn btn-primary"
+                  style={{ gap: '6px' }}
+                >
+                  <Check size={16} /> เช็กอินย้อนหลังเรียบร้อย
+                </button>
               </div>
             )}
 
@@ -210,7 +298,16 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
               // Display Manager Note if already approved/rejected
               (selectedReq.managerNote && (
                 <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ความคิดเห็นจากผู้จัดการ</span>
+                  {selectedReq.approvedBy && (
+                    <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <User size={14} style={{ color: 'var(--text-muted)' }} />
+                      <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                        {selectedReq.status === 'Approved' ? 'อนุมัติโดย: ' : 'พิจารณาโดย: '}
+                        <strong>{selectedReq.approvedBy}</strong>
+                      </span>
+                    </div>
+                  )}
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ความคิดเห็นประกอบการพิจารณา</span>
                   <div style={{
                     padding: '12px',
                     borderRadius: '8px',
@@ -232,7 +329,8 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
               )
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
