@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Database } from 'lucide-react';
 import { ROLE_LABELS_FULL } from '../constants/roles';
 import { api } from '../utils/api';
 
@@ -49,10 +49,13 @@ export default function MasterData({ usersList, onUpdateUserRole, onUserAdded })
   ];
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ padding: '24px' }}>
-      <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
-        🗃️ การจัดการข้อมูลหลักกลางของระบบ (Master Data Management)
-      </h2>
+    <div className="glass-panel animate-fade-in" style={{ padding: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+        <Database size={18} color="var(--color-primary)" />
+        <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
+          การจัดการข้อมูลหลักกลางของระบบ
+        </h2>
+      </div>
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
         {TABS.map(tab => (

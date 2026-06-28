@@ -20,6 +20,16 @@ export default function App() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usersList, setUsersList] = useState([]);
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('rsms_theme');
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('rsms_theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -96,6 +106,8 @@ export default function App() {
     setRole('teacher');
     setActiveMenu('checkin');
   };
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   const handleSubmitRequest = async (payload) => {
     if (role !== 'teacher' && role !== 'dean' && role !== 'admin') {
@@ -212,20 +224,21 @@ export default function App() {
   };
 
   if (!userEmail) {
-    return <LoginModal onLogin={handleLogin} />;
+    return <LoginModal onLogin={handleLogin} theme={theme} onToggleTheme={toggleTheme} />;
   }
 
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-to-content">ข้ามไปยังเนื้อหาหลัก</a>
       <Sidebar role={role} activeMenu={activeMenu} onMenuChange={setActiveMenu} />
       <div className="content-layout">
-        <Header email={userEmail} role={role} onLogout={handleLogout} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-main)' }}>
-            {PAGE_TITLES[activeMenu] || 'หน้าหลัก'}
-          </h2>
-        </div>
-        {renderContent()}
+        <Header email={userEmail} role={role} onLogout={handleLogout} theme={theme} onToggleTheme={toggleTheme} />
+        <main id="main-content">
+          <div className="page-title-bar">
+            <h2>{PAGE_TITLES[activeMenu] || 'หน้าหลัก'}</h2>
+          </div>
+          {renderContent()}
+        </main>
       </div>
     </div>
   );

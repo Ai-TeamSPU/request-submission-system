@@ -1,11 +1,15 @@
 import React from 'react';
+import { Scroll } from 'lucide-react';
 
 export default function SystemLogs({ userEmail }) {
   return (
-    <div className="glass-panel animate-fade-in" style={{ padding: '24px' }}>
-      <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
-        📜 บันทึกกิจกรรมระบบย้อนหลัง (System Audit Logs)
-      </h2>
+    <div className="glass-panel animate-fade-in" style={{ padding: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+        <Scroll size={18} color="var(--color-primary)" />
+        <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
+          บันทึกกิจกรรมระบบย้อนหลัง
+        </h2>
+      </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
