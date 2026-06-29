@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, X, Eye, Calendar, MapPin, User, FileImage } from 'lucide-react';
+import { Check, X, Eye, Calendar, MapPin, User, FileImage, ClipboardList } from 'lucide-react';
 import { api } from '../utils/api';
 
 export default function RequestsTable({ requests, role, userEmail, onApprove, onReject, onComplete }) {
@@ -10,17 +10,37 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
   const [attachmentData, setAttachmentData] = useState(null);
   const [loadingAttachment, setLoadingAttachment] = useState(false);
 
-  // Filter requests based on role
-  const displayedRequests = role === 'employee' 
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && selectedReq) closeDetails();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [selectedReq]);
+
+  const displayedRequests = role === 'employee'
     ? requests.filter(r => r.email === userEmail)
     : requests;
+
+  const getStatusDot = (status) => {
+    switch (status) {
+      case 'Approved':
+        return <span className="status-dot status-dot--approved">อนุมัติแล้ว</span>;
+      case 'Completed':
+        return <span className="status-dot status-dot--completed">เช็กอินเรียบร้อย</span>;
+      case 'Rejected':
+        return <span className="status-dot status-dot--rejected">ปฏิเสธ</span>;
+      default:
+        return <span className="status-dot status-dot--pending">รออนุมัติ</span>;
+    }
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Approved':
         return <span className="badge badge-approved">อนุมัติแล้ว</span>;
       case 'Completed':
-        return <span className="badge badge-approved" style={{ background: 'rgba(59,130,246,0.15)', color: 'hsl(217,90%,70%)' }}>เช็กอินเรียบร้อย</span>;
+        return <span className="badge badge-completed">เช็กอินเรียบร้อย</span>;
       case 'Rejected':
         return <span className="badge badge-rejected">ปฏิเสธ</span>;
       default:
@@ -67,45 +87,51 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', color: 'var(--text-main)' }}>
-        {role === 'manager' ? '📥 คิวพิจารณาคำร้องและจัดการเคส' : '📋 ประวัติคำร้องขอของคุณ'}
-      </h2>
+    <div className="glass-panel animate-fade-in" style={{ padding: '28px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div className="dash-section-header">
+        <ClipboardList size={16} color="var(--color-primary)" />
+        <h2>{role === 'manager' ? 'คิวพิจารณาคำร้องและจัดการเคส' : 'ประวัติคำร้องขอของคุณ'}</h2>
+        <span className="dash-section-subtitle">{displayedRequests.length} รายการ</span>
+      </div>
 
-      <div style={{ overflowX: 'auto', flex: 1 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+      <div className="tbl-grid" style={{ flex: 1 }}>
+        <table>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-              <th style={{ padding: '12px 8px', fontSize: '13px', color: 'var(--text-muted)' }}>รหัสคำขอ</th>
-              <th style={{ padding: '12px 8px', fontSize: '13px', color: 'var(--text-muted)' }}>ผู้สอน</th>
-              <th style={{ padding: '12px 8px', fontSize: '13px', color: 'var(--text-muted)' }}>วิชา / กลุ่ม</th>
-              <th style={{ padding: '12px 8px', fontSize: '13px', color: 'var(--text-muted)' }}>วันที่สอน</th>
-              <th style={{ padding: '12px 8px', fontSize: '13px', color: 'var(--text-muted)' }}>สถานะ</th>
-              <th style={{ padding: '12px 8px', fontSize: '13px', color: 'var(--text-muted)' }}>การจัดการ</th>
+            <tr>
+              <th>รหัสคำขอ</th>
+              <th>ผู้สอน</th>
+              <th>วิชา / กลุ่ม</th>
+              <th>วันที่สอน</th>
+              <th>สถานะ</th>
+              <th>การจัดการ</th>
             </tr>
           </thead>
           <tbody>
             {displayedRequests.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ padding: '40px 10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-                  ไม่มีข้อมูลคำร้องในระบบ
+                <td colSpan="6">
+                  <div className="empty-state">
+                    <ClipboardList size={40} style={{ opacity: 0.15 }} />
+                    <p>ไม่มีข้อมูลคำร้องในระบบ</p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-4px' }}>คำร้องที่ส่งเข้ามาจะแสดงที่นี่</p>
+                  </div>
                 </td>
               </tr>
             ) : (
               displayedRequests.map((req) => (
-                <tr key={req.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: '600', color: 'var(--text-main)' }}>{req.id}</td>
-                  <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-main)' }}>
+                <tr key={req.id}>
+                  <td><span style={{ fontWeight: '600' }}>{req.id}</span></td>
+                  <td>
                     <div>{req.teacherName}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{req.email}</div>
                   </td>
-                  <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-main)' }}>
+                  <td>
                     <div>{req.courseCode}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{req.section}</div>
                   </td>
-                  <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-main)' }}>{req.date}</td>
-                  <td style={{ padding: '14px 8px' }}>{getStatusBadge(req.status)}</td>
-                  <td style={{ padding: '14px 8px' }}>
+                  <td>{req.date}</td>
+                  <td>{getStatusDot(req.status)}</td>
+                  <td>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => openDetails(req)}
@@ -152,28 +178,9 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
 
       {/* Details / Action Modal — rendered via portal to escape backdrop-filter containing block */}
       {selectedReq && createPortal(
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(5, 8, 16, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100,
-          padding: '20px'
-        }}>
-          <div className="glass-panel animate-fade-in" style={{
-            maxWidth: '650px',
-            width: '100%',
-            padding: '28px',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)' }}>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeDetails(); }}>
+          <div className="glass-panel animate-scale-in modal-content" role="dialog" aria-modal="true" aria-labelledby="req-detail-title">
+            <h3 id="req-detail-title" style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)' }}>
               <span>รายละเอียดคำขอ: {selectedReq.id}</span>
               {getStatusBadge(selectedReq.status)}
             </h3>
@@ -204,6 +211,16 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
                 </span>
               </div>
             </div>
+
+            {selectedReq.approvedBy && (selectedReq.status === 'Approved' || selectedReq.status === 'Completed' || selectedReq.status === 'Rejected') && (
+              <div style={{ marginBottom: '20px', padding: '12px', background: 'rgba(23, 201, 100, 0.05)', borderRadius: '8px', border: '1px solid rgba(23, 201, 100, 0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <User size={16} style={{ color: 'hsl(145, 80%, 65%)' }} />
+                <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                  {selectedReq.status === 'Rejected' ? 'พิจารณาโดย: ' : 'อนุมัติโดย: '}
+                  <strong>{selectedReq.approvedBy}</strong>
+                </span>
+              </div>
+            )}
 
             <div style={{ marginBottom: '20px' }}>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>ประเภทปัญหา</span>
@@ -253,20 +270,6 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
               </div>
             )}
 
-            {/* Academic Complete Action */}
-            {role === 'academic' && selectedReq.status === 'Approved' && (
-              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button onClick={closeDetails} className="btn btn-secondary">ปิด</button>
-                <button
-                  onClick={async () => { await onComplete(selectedReq.id); closeDetails(); }}
-                  className="btn btn-primary"
-                  style={{ gap: '6px' }}
-                >
-                  <Check size={16} /> เช็กอินย้อนหลังเรียบร้อย
-                </button>
-              </div>
-            )}
-
             {/* Approval Flow Section */}
             {role === 'manager' && selectedReq.status === 'Pending' ? (
               <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px' }}>
@@ -282,7 +285,7 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
                   placeholder="กรอกเหตุผลในการอนุมัติหรือปฏิเสธคำร้องนี้..."
                   style={{ marginBottom: '10px' }}
                 ></textarea>
-                {errorNote && <span style={{ color: 'var(--color-danger)', fontSize: '12px', display: 'block', marginBottom: '10px', fontWeight: '500' }}>{errorNote}</span>}
+                {errorNote && <span role="alert" style={{ color: 'var(--color-danger)', fontSize: '12px', display: 'block', marginBottom: '10px', fontWeight: '500' }}>{errorNote}</span>}
 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                   <button onClick={closeDetails} className="btn btn-secondary">ยกเลิก</button>
@@ -295,38 +298,44 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
                 </div>
               </div>
             ) : (
-              // Display Manager Note if already approved/rejected
-              (selectedReq.managerNote && (
-                <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px' }}>
-                  {selectedReq.approvedBy && (
-                    <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <User size={14} style={{ color: 'var(--text-muted)' }} />
-                      <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>
-                        {selectedReq.status === 'Approved' ? 'อนุมัติโดย: ' : 'พิจารณาโดย: '}
-                        <strong>{selectedReq.approvedBy}</strong>
-                      </span>
+              <>
+                {selectedReq.managerNote && (
+                  <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px' }}>
+                    {selectedReq.approvedBy && (
+                      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={14} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                          {selectedReq.status === 'Approved' || selectedReq.status === 'Completed' ? 'อนุมัติโดย: ' : 'พิจารณาโดย: '}
+                          <strong>{selectedReq.approvedBy}</strong>
+                        </span>
+                      </div>
+                    )}
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ความคิดเห็นประกอบการพิจารณา</span>
+                    <div style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      background: selectedReq.status === 'Approved' || selectedReq.status === 'Completed' ? 'rgba(23, 201, 100, 0.05)' : 'rgba(243, 18, 96, 0.05)',
+                      border: `1px solid ${selectedReq.status === 'Approved' || selectedReq.status === 'Completed' ? 'rgba(23, 201, 100, 0.2)' : 'rgba(243, 18, 96, 0.2)'}`,
+                      color: selectedReq.status === 'Approved' || selectedReq.status === 'Completed' ? 'hsl(145, 80%, 75%)' : 'hsl(355, 85%, 75%)'
+                    }}>
+                      {selectedReq.managerNote}
                     </div>
-                  )}
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ความคิดเห็นประกอบการพิจารณา</span>
-                  <div style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    background: selectedReq.status === 'Approved' ? 'rgba(23, 201, 100, 0.05)' : 'rgba(243, 18, 96, 0.05)',
-                    border: `1px solid ${selectedReq.status === 'Approved' ? 'rgba(23, 201, 100, 0.2)' : 'rgba(243, 18, 96, 0.2)'}`,
-                    color: selectedReq.status === 'Approved' ? 'hsl(145, 80%, 75%)' : 'hsl(355, 85%, 75%)'
-                  }}>
-                    {selectedReq.managerNote}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                    <button onClick={closeDetails} className="btn btn-secondary">ปิด</button>
-                  </div>
-                </div>
-              )) || (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                )}
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
                   <button onClick={closeDetails} className="btn btn-secondary">ปิด</button>
+                  {role === 'academic' && selectedReq.status === 'Approved' && (
+                    <button
+                      onClick={async () => { await onComplete(selectedReq.id); closeDetails(); }}
+                      className="btn btn-primary"
+                      style={{ gap: '6px' }}
+                    >
+                      <Check size={16} /> เช็กอินย้อนหลังเรียบร้อย
+                    </button>
+                  )}
                 </div>
-              )
+              </>
             )}
           </div>
         </div>,

@@ -1,66 +1,65 @@
 import React from 'react';
-import { LogOut, UserCheck } from 'lucide-react';
+import { LogOut, Sun, Moon } from 'lucide-react';
 import { ROLE_LABELS } from '../constants/roles';
 
-export default function Header({ email, role, onLogout }) {
+export default function Header({ email, role, onLogout, theme, onToggleTheme }) {
+  const initials = email ? email.charAt(0).toUpperCase() : 'U';
+
   return (
     <header className="glass-panel" style={{
-      padding: '16px 24px',
-      marginBottom: '24px',
+      padding: '12px 24px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
+      justifyContent: 'flex-end',
       gap: '16px'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{
-          background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-          width: '40px',
-          height: '40px',
-          borderRadius: '10px',
+          width: '34px',
+          height: '34px',
+          borderRadius: '50%',
+          background: 'var(--color-primary-subtle)',
+          border: '1px solid var(--border-glow)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(138, 75, 243, 0.3)'
+          fontSize: '13px',
+          fontWeight: '700',
+          color: 'var(--color-primary)',
         }}>
-          <UserCheck size={20} color="#fff" />
+          {initials}
         </div>
-        <div>
-          <h1 style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.5px', color: 'var(--text-main)' }}>
-            RSMS
-          </h1>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            ระบบคำร้องขอเช็คอินย้อนหลัง
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)', lineHeight: '1.3' }}>{email}</p>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.3' }}>
+            {ROLE_LABELS[role] || role}
           </p>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '13px', fontWeight: '600' }}>{email}</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              สิทธิ์การใช้งาน: {ROLE_LABELS[role] || role}
-            </p>
-          </div>
-          <button
-            onClick={onLogout}
-            className="btn btn-secondary"
-            style={{
-              width: '36px',
-              height: '36px',
-              padding: 0,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="ออกจากระบบ"
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
+        <button
+          onClick={onToggleTheme}
+          className="theme-toggle"
+          aria-label={theme === 'dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'}
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+        <div style={{ width: '1px', height: '24px', background: 'var(--border-light)', margin: '0 4px' }} />
+        <button
+          onClick={onLogout}
+          className="btn btn-secondary"
+          style={{
+            width: '34px',
+            height: '34px',
+            padding: 0,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          title="ออกจากระบบ"
+          aria-label="ออกจากระบบ"
+        >
+          <LogOut size={15} />
+        </button>
       </div>
     </header>
   );

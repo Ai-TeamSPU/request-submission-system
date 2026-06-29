@@ -139,9 +139,12 @@ export default function ExcelImport() {
   );
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '700' }}>📥 นำเข้าข้อมูลรหัสวิชาผ่าน Excel</h2>
+    <div className="glass-panel animate-fade-in" style={{ padding: '28px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Upload size={18} color="var(--color-primary)" />
+          <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.2px' }}>นำเข้าข้อมูลรหัสวิชาผ่าน Excel</h2>
+        </div>
         <button onClick={handleClear} className="btn btn-danger" style={{ padding: '6px 12px', fontSize: '12px', gap: '4px' }}>
           <Trash2 size={14} /> ล้างข้อมูลรหัสวิชาทั้งหมด
         </button>

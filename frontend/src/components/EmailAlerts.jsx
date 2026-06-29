@@ -1,12 +1,15 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Mail } from 'lucide-react';
 
 export default function EmailAlerts() {
   return (
-    <div className="glass-panel animate-fade-in" style={{ padding: '24px' }}>
-      <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
-        ✉️ แม่แบบอีเมลแจ้งเตือนผู้ใช้งาน (Email Template Configuration)
-      </h2>
+    <div className="glass-panel animate-fade-in" style={{ padding: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+        <Mail size={18} color="var(--color-primary)" />
+        <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
+          แม่แบบอีเมลแจ้งเตือนผู้ใช้งาน
+        </h2>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="glass-card">
           <label style={{ color: 'var(--text-main)', fontWeight: '600' }}>1. เมื่อผู้สอนส่งคำร้อง (Request Submitted)</label>

@@ -78,60 +78,93 @@ export default function Sidebar({ role, activeMenu, onMenuChange }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {MENU_CATEGORIES.map((cat, catIdx) => {
           if (!cat.roles.includes(role)) return null;
 
-          return (
-            <div key={catIdx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: '700',
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                paddingLeft: '12px',
-                marginBottom: '4px'
-              }}>
-                {cat.title}
-              </span>
-              {cat.items.map((item) => {
-                const IconComponent = item.icon;
-                const isActive = activeMenu === item.id;
+          const visibleCats = MENU_CATEGORIES.filter(c => c.roles.includes(role));
+          const isLast = visibleCats[visibleCats.length - 1] === cat;
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onMenuChange(item.id)}
-                    className="sidebar-menu-btn"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      width: '100%',
-                      padding: '10px 14px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      backgroundColor: isActive ? 'var(--color-primary-glow)' : 'transparent',
-                      color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
-                      borderLeft: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
-                      borderTopLeftRadius: isActive ? '0' : '8px',
-                      borderBottomLeftRadius: isActive ? '0' : '8px',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <IconComponent size={16} style={{ color: isActive ? 'var(--color-primary)' : 'inherit' }} />
-                    {item.name}
-                  </button>
-                );
-              })}
-            </div>
+          return (
+            <React.Fragment key={catIdx}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: catIdx > 0 ? '4px' : '0' }}>
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.8px',
+                  paddingLeft: '12px',
+                  marginBottom: '6px',
+                  opacity: 0.7
+                }}>
+                  {cat.title}
+                </span>
+                {cat.items.map((item) => {
+                  const IconComponent = item.icon;
+                  const isActive = activeMenu === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => onMenuChange(item.id)}
+                      className="sidebar-menu-btn"
+                      aria-current={isActive ? 'page' : undefined}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '9px 12px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: isActive ? '600' : '400',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        backgroundColor: isActive ? 'var(--color-primary-subtle)' : 'transparent',
+                        color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
+                        textAlign: 'left',
+                        position: 'relative',
+                      }}
+                    >
+                      {isActive && (
+                        <span style={{
+                          position: 'absolute',
+                          left: '0',
+                          top: '20%',
+                          height: '60%',
+                          width: '3px',
+                          borderRadius: '0 3px 3px 0',
+                          background: 'var(--color-primary)',
+                          transition: 'all 0.2s ease',
+                        }} />
+                      )}
+                      <IconComponent size={16} style={{
+                        color: isActive ? 'var(--color-primary)' : 'inherit',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }} />
+                      {item.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {!isLast && <div className="section-divider" />}
+            </React.Fragment>
           );
         })}
+      </nav>
+
+      <div style={{
+        marginTop: 'auto',
+        paddingTop: '16px',
+        borderTop: '1px solid var(--border-light)',
+        textAlign: 'center',
+      }}>
+        <p style={{ fontSize: '10px', color: 'var(--text-muted)', opacity: 0.5, letterSpacing: '0.3px' }}>
+          RSMS v1.0
+        </p>
       </div>
     </aside>
   );
