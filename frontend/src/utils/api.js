@@ -31,6 +31,12 @@ export const api = {
       body: JSON.stringify({ status, managerNote, approverEmail }),
     }),
 
+  batchUpdateStatus: (ids, status, managerNote, approverEmail) =>
+    request('/api/requests/batch-status', {
+      method: 'PATCH',
+      body: JSON.stringify({ ids, status, managerNote, approverEmail }),
+    }),
+
   login: (email) =>
     request('/api/users/login', {
       method: 'POST',

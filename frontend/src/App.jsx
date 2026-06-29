@@ -144,6 +144,26 @@ export default function App() {
     if (res.success) await loadRequests();
   };
 
+  const handleBatchApprove = async (ids, note) => {
+    if (role !== 'dean' && role !== 'admin') {
+      alert('เฉพาะคณบดีหรือผู้ดูแลระบบเท่านั้นที่สามารถอนุมัติได้');
+      return;
+    }
+    const res = await api.batchUpdateStatus(ids, 'Approved', note, userEmail);
+    if (res.success) await loadRequests();
+    return res;
+  };
+
+  const handleBatchReject = async (ids, note) => {
+    if (role !== 'dean' && role !== 'admin') {
+      alert('เฉพาะคณบดีหรือผู้ดูแลระบบเท่านั้นที่สามารถปฏิเสธได้');
+      return;
+    }
+    const res = await api.batchUpdateStatus(ids, 'Rejected', note, userEmail);
+    if (res.success) await loadRequests();
+    return res;
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -183,6 +203,8 @@ export default function App() {
             userEmail={userEmail}
             onApprove={handleApprove}
             onReject={handleReject}
+            onBatchApprove={handleBatchApprove}
+            onBatchReject={handleBatchReject}
           />
         );
       }

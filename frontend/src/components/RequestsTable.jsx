@@ -1,26 +1,96 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, X, Eye, Calendar, MapPin, User, FileImage, ClipboardList } from 'lucide-react';
+import { Check, X, Eye, Calendar, MapPin, User, FileImage, ClipboardList, CheckSquare } from 'lucide-react';
 import { api } from '../utils/api';
 
-export default function RequestsTable({ requests, role, userEmail, onApprove, onReject, onComplete }) {
+export default function RequestsTable({ requests, role, userEmail, onApprove, onReject, onComplete, onBatchApprove, onBatchReject }) {
   const [selectedReq, setSelectedReq] = useState(null);
   const [managerNote, setManagerNote] = useState('');
   const [errorNote, setErrorNote] = useState('');
   const [attachmentData, setAttachmentData] = useState(null);
   const [loadingAttachment, setLoadingAttachment] = useState(false);
 
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [batchAction, setBatchAction] = useState(null);
+  const [batchNote, setBatchNote] = useState('');
+  const [batchError, setBatchError] = useState('');
+  const [batchLoading, setBatchLoading] = useState(false);
+  const selectAllRef = useRef(null);
+
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && selectedReq) closeDetails();
+      if (e.key === 'Escape') {
+        if (batchAction) { setBatchAction(null); return; }
+        if (selectedReq) closeDetails();
+      }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [selectedReq]);
+  }, [selectedReq, batchAction]);
 
   const displayedRequests = role === 'employee'
     ? requests.filter(r => r.email === userEmail)
     : requests;
+
+  const isManager = role === 'manager';
+  const pendingIds = isManager ? displayedRequests.filter(r => r.status === 'Pending').map(r => r.id) : [];
+
+  useEffect(() => {
+    if (selectAllRef.current && isManager) {
+      const selectedCount = pendingIds.filter(id => selectedIds.has(id)).length;
+      selectAllRef.current.indeterminate = selectedCount > 0 && selectedCount < pendingIds.length;
+    }
+  }, [selectedIds, pendingIds]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [requests]);
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allSelected = pendingIds.length > 0 && pendingIds.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingIds));
+    }
+  };
+
+  const openBatchModal = (action) => {
+    setBatchAction(action);
+    setBatchNote('');
+    setBatchError('');
+  };
+
+  const handleBatchSubmit = async () => {
+    if (!batchNote.trim()) {
+      setBatchError('กรุณากรอกเหตุผลประกอบการพิจารณา');
+      return;
+    }
+    setBatchError('');
+    setBatchLoading(true);
+
+    try {
+      const ids = Array.from(selectedIds);
+      const handler = batchAction === 'approve' ? onBatchApprove : onBatchReject;
+      await handler(ids, batchNote);
+      setSelectedIds(new Set());
+      setBatchAction(null);
+      setBatchNote('');
+    } catch {
+      setBatchError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    }
+
+    setBatchLoading(false);
+  };
 
   const getStatusDot = (status) => {
     switch (status) {
@@ -76,15 +146,17 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
       return;
     }
     setErrorNote('');
-    
+
     if (isApprove) {
       await onApprove(selectedReq.id, managerNote);
     } else {
       await onReject(selectedReq.id, managerNote);
     }
-    
+
     closeDetails();
   };
+
+  const selectedRequests = displayedRequests.filter(r => selectedIds.has(r.id));
 
   return (
     <div className="glass-panel animate-fade-in" style={{ padding: '28px', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -94,10 +166,56 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
         <span className="dash-section-subtitle">{displayedRequests.length} รายการ</span>
       </div>
 
+      {/* Batch Action Bar */}
+      {isManager && selectedIds.size > 0 && (
+        <div className="batch-action-bar">
+          <div className="batch-count">
+            <CheckSquare size={16} />
+            เลือกแล้ว {selectedIds.size} รายการ
+          </div>
+          <div className="batch-actions">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="btn btn-secondary"
+              style={{ padding: '6px 14px', fontSize: '12px' }}
+            >
+              ยกเลิกการเลือก
+            </button>
+            <button
+              onClick={() => openBatchModal('reject')}
+              className="btn btn-danger"
+              style={{ padding: '6px 14px', fontSize: '12px', gap: '4px' }}
+            >
+              <X size={14} /> ปฏิเสธทั้งหมด
+            </button>
+            <button
+              onClick={() => openBatchModal('approve')}
+              className="btn btn-success"
+              style={{ padding: '6px 14px', fontSize: '12px', gap: '4px' }}
+            >
+              <Check size={14} /> อนุมัติทั้งหมด
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="tbl-grid" style={{ flex: 1 }}>
         <table>
           <thead>
             <tr>
+              {isManager && (
+                <th style={{ width: '44px', textAlign: 'center' }}>
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    className={`batch-checkbox${pendingIds.length > 0 && pendingIds.some(id => selectedIds.has(id)) && !pendingIds.every(id => selectedIds.has(id)) ? ' indeterminate' : ''}`}
+                    checked={pendingIds.length > 0 && pendingIds.every(id => selectedIds.has(id))}
+                    onChange={toggleSelectAll}
+                    aria-label="เลือกทั้งหมด"
+                    disabled={pendingIds.length === 0}
+                  />
+                </th>
+              )}
               <th>รหัสคำขอ</th>
               <th>ผู้สอน</th>
               <th>วิชา / กลุ่ม</th>
@@ -109,7 +227,7 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
           <tbody>
             {displayedRequests.length === 0 ? (
               <tr>
-                <td colSpan="6">
+                <td colSpan={isManager ? 7 : 6}>
                   <div className="empty-state">
                     <ClipboardList size={40} style={{ opacity: 0.15 }} />
                     <p>ไม่มีข้อมูลคำร้องในระบบ</p>
@@ -119,7 +237,20 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
               </tr>
             ) : (
               displayedRequests.map((req) => (
-                <tr key={req.id}>
+                <tr key={req.id} className={selectedIds.has(req.id) ? 'row-selected' : ''}>
+                  {isManager && (
+                    <td style={{ textAlign: 'center' }}>
+                      {req.status === 'Pending' && (
+                        <input
+                          type="checkbox"
+                          className="batch-checkbox"
+                          checked={selectedIds.has(req.id)}
+                          onChange={() => toggleSelect(req.id)}
+                          aria-label={`เลือกคำขอ ${req.id}`}
+                        />
+                      )}
+                    </td>
+                  )}
                   <td><span style={{ fontWeight: '600' }}>{req.id}</span></td>
                   <td>
                     <div>{req.teacherName}</div>
@@ -176,7 +307,7 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
         </table>
       </div>
 
-      {/* Details / Action Modal — rendered via portal to escape backdrop-filter containing block */}
+      {/* Single-item Details / Action Modal */}
       {selectedReq && createPortal(
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeDetails(); }}>
           <div className="glass-panel animate-scale-in modal-content" role="dialog" aria-modal="true" aria-labelledby="req-detail-title">
@@ -337,6 +468,61 @@ export default function RequestsTable({ requests, role, userEmail, onApprove, on
                 </div>
               </>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Batch Action Modal */}
+      {batchAction && createPortal(
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setBatchAction(null); }}>
+          <div className="glass-panel animate-scale-in modal-content" role="dialog" aria-modal="true" aria-labelledby="batch-modal-title">
+            <h3 id="batch-modal-title" style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', color: 'var(--text-main)' }}>
+              {batchAction === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}คำขอ {selectedIds.size} รายการ
+            </h3>
+
+            <div style={{ marginBottom: '16px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+                รายการที่จะ{batchAction === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}:
+              </span>
+              <ul className="batch-summary-list">
+                {selectedRequests.map(req => (
+                  <li key={req.id}>
+                    <span className="batch-item-id">{req.id}</span>
+                    <span>{req.teacherName} — {req.courseCode}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <label htmlFor="batchNote">ความคิดเห็น/เหตุผลประกอบการตัดสินใจ *</label>
+            <textarea
+              id="batchNote"
+              rows="3"
+              value={batchNote}
+              onChange={(e) => {
+                setBatchNote(e.target.value);
+                if (batchError) setBatchError('');
+              }}
+              placeholder={`กรอกเหตุผลในการ${batchAction === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}คำร้องทั้งหมด...`}
+              style={{ marginBottom: '10px' }}
+            ></textarea>
+            {batchError && <span role="alert" style={{ color: 'var(--color-danger)', fontSize: '12px', display: 'block', marginBottom: '10px', fontWeight: '500' }}>{batchError}</span>}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <button onClick={() => setBatchAction(null)} className="btn btn-secondary" disabled={batchLoading}>
+                ยกเลิก
+              </button>
+              {batchAction === 'approve' ? (
+                <button onClick={handleBatchSubmit} className="btn btn-success" style={{ gap: '6px' }} disabled={batchLoading}>
+                  <Check size={16} /> {batchLoading ? 'กำลังดำเนินการ...' : `ยืนยันอนุมัติ ${selectedIds.size} รายการ`}
+                </button>
+              ) : (
+                <button onClick={handleBatchSubmit} className="btn btn-danger" style={{ gap: '6px' }} disabled={batchLoading}>
+                  <X size={16} /> {batchLoading ? 'กำลังดำเนินการ...' : `ยืนยันปฏิเสธ ${selectedIds.size} รายการ`}
+                </button>
+              )}
+            </div>
           </div>
         </div>,
         document.body

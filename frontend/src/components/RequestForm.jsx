@@ -194,8 +194,8 @@ export default function RequestForm({ userEmail, onSubmitSuccess }) {
               if (matches.length === 0) return (
                 <div style={{
                   position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                  background: 'hsl(230, 25%, 14%)', border: '1px solid var(--border-light)',
-                  borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                  background: 'var(--bg-dropdown)', border: '1px solid var(--border-light)',
+                  borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 }}>
                   <div style={{ padding: '10px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>ไม่พบรายชื่อที่ค้นหา</div>
                 </div>
@@ -205,8 +205,8 @@ export default function RequestForm({ userEmail, onSubmitSuccess }) {
                 <div style={{
                   position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
                   maxHeight: '220px', overflowY: 'auto',
-                  background: 'hsl(230, 25%, 14%)', border: '1px solid var(--border-light)',
-                  borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                  background: 'var(--bg-dropdown)', border: '1px solid var(--border-light)',
+                  borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                   padding: '4px',
                 }}>
                   {matches.slice(0, 20).map((t, i) => (
@@ -281,8 +281,8 @@ export default function RequestForm({ userEmail, onSubmitSuccess }) {
             if (matches.length === 0) return (
               <div style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                background: 'hsl(230, 25%, 14%)', border: '1px solid var(--border-light)',
-                borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                background: 'var(--bg-dropdown)', border: '1px solid var(--border-light)',
+                borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
               }}>
                 <div style={{ padding: '10px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>ไม่พบรหัสวิชาที่ค้นหา</div>
               </div>
@@ -292,8 +292,8 @@ export default function RequestForm({ userEmail, onSubmitSuccess }) {
               <div style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
                 maxHeight: '220px', overflowY: 'auto',
-                background: 'hsl(230, 25%, 14%)', border: '1px solid var(--border-light)',
-                borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                background: 'var(--bg-dropdown)', border: '1px solid var(--border-light)',
+                borderRadius: '0 0 8px 8px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 padding: '4px',
               }}>
                 {matches.slice(0, 20).map((c, i) => (
