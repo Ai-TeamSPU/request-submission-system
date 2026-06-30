@@ -1108,6 +1108,46 @@ a:focus-visible {
 }
 
 /* ═══════════════════════════════════════
+   Checkin List — Card Grid & Pagination
+   ═══════════════════════════════════════ */
+.checkin-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.checkin-card {
+  animation: fadeIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  padding: 18px;
+}
+
+.checkin-card:hover {
+  transform: translateY(-3px);
+}
+
+.checkin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+@media (max-width: 1200px) {
+  .checkin-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .checkin-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════
    Batch Selection — Checkbox & Action Bar
    ═══════════════════════════════════════ */
 .batch-checkbox {

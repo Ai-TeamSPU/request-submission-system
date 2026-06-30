@@ -94,4 +94,24 @@ export const api = {
 
   getFacultyByEmail: (email) =>
     request(`/api/faculties/by-email/${encodeURIComponent(email)}`),
+
+  getNoCheckinRecords: () => request('/api/no-checkin'),
+
+  importNoCheckin: (records) =>
+    request('/api/no-checkin/import', {
+      method: 'POST',
+      body: JSON.stringify({ records }),
+    }),
+
+  clearNoCheckin: () =>
+    request('/api/no-checkin/all', { method: 'DELETE' }),
+
+  deleteNoCheckin: (id) =>
+    request(`/api/no-checkin/${id}`, { method: 'DELETE' }),
+
+  importToRequests: (records) =>
+    request('/api/no-checkin/import-to-requests', {
+      method: 'POST',
+      body: JSON.stringify({ records }),
+    }),
 };

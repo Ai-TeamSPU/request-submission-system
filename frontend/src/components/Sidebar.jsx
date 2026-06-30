@@ -10,7 +10,7 @@ const MENU_CATEGORIES = [
     title: 'อาจารย์',
     roles: ['teacher', 'dean', 'admin'],
     items: [
-      { id: 'checkin', name: 'เช็คอิน', icon: CheckSquare },
+      { id: 'checkin', name: 'กรอกข้อมูลการ Checkin ย้อนหลัง', icon: CheckSquare },
       { id: 'my-requests', name: 'คำขออนุมัติของฉัน', icon: ClipboardList },
     ],
   },
@@ -36,6 +36,7 @@ const MENU_CATEGORIES = [
     items: [
       { id: 'email-alerts', name: 'อีเมลเเจ้งเตือน', icon: Mail },
       { id: 'import-excel', name: 'นำเข้า Excel', icon: FileSpreadsheet },
+      { id: 'import-no-checkin', name: 'นำเข้าข้อมูลอาจารย์ที่ไม่เช็คอิน', icon: FileSpreadsheet },
       { id: 'master-data', name: 'ข้อมูลหลัก', icon: Database },
       { id: 'system-logs', name: 'บันทึกระบบ', icon: Scroll },
     ],

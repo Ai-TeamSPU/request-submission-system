@@ -9,6 +9,8 @@ import EmailAlerts from './components/EmailAlerts';
 import ExcelImport from './components/ExcelImport';
 import MasterData from './components/MasterData';
 import SystemLogs from './components/SystemLogs';
+import NoCheckinImport from './components/NoCheckinImport';
+import CheckinList from './components/CheckinList';
 import { api } from './utils/api';
 import { isMenuAllowedForRole, getInitialMenuForRole, PAGE_TITLES } from './constants/roles';
 
@@ -191,6 +193,8 @@ export default function App() {
         return <RequestForm userEmail={userEmail} onSubmitSuccess={handleSubmitRequest} />;
       case 'my-requests':
         return <RequestsTable requests={requests} role="employee" userEmail={userEmail} />;
+      case 'checkin-list':
+        return <CheckinList onNavigateToCheckin={() => setActiveMenu('checkin')} />;
       case 'pending-approvals': {
         const pending = requests.filter(r => r.status === 'Pending');
         const filtered = (role === 'dean' && userFaculty)
@@ -236,6 +240,8 @@ export default function App() {
         return <StatsDashboard requests={requests} />;
       case 'import-excel':
         return <ExcelImport />;
+      case 'import-no-checkin':
+        return <NoCheckinImport />;
       case 'master-data':
         return <MasterData usersList={usersList} onUpdateUserRole={handleUpdateUserRole} onUserAdded={loadUsersList} />;
       case 'system-logs':

@@ -6,6 +6,7 @@ import facultiesRouter from './routes/faculties.js';
 import emailRouter from './routes/email.js';
 import coursesRouter from './routes/courses.js';
 import emailApprovalRouter from './routes/emailApproval.js';
+import noCheckinRouter from './routes/noCheckin.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use('/api/faculties', facultiesRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/courses', coursesRouter);
 app.use('/api/approval', emailApprovalRouter);
+app.use('/api/no-checkin', noCheckinRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
