@@ -1235,13 +1235,23 @@ a:focus-visible {
 }
 
 [data-theme="light"] .batch-checkbox {
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: #000000;
   background: rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="light"] .batch-checkbox:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-subtle);
+  border-color: #000000;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .batch-checkbox:checked {
+  background: #000000;
+  border-color: #000000;
+}
+
+[data-theme="light"] .batch-checkbox.indeterminate {
+  background: #000000;
+  border-color: #000000;
 }
 
 [data-theme="light"] .tbl-grid tbody tr.row-selected {
