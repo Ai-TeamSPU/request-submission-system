@@ -62,7 +62,7 @@ export default function NoCheckinImport() {
           if (lower.includes('ชื่อ') && (lower.includes('อาจารย์') || lower.includes('ผู้สอน'))) autoMap.teacherName = String(i);
           else if (lower.includes('รหัสวิชา') || lower.includes('course')) autoMap.courseCode = String(i);
           else if (lower.includes('กลุ่ม') || lower.includes('section')) autoMap.section = String(i);
-          else if (lower.includes('เวลา') || lower.includes('time') || lower.includes('คาบ')) autoMap.timeRange = String(i);
+          else if ((lower.includes('เวลา') || lower.includes('time') || lower.includes('คาบ')) && !lower.includes('เช็คอิน') && !lower.includes('เช็กอิน') && !lower.includes('checkin')) autoMap.timeRange = String(i);
           else if (lower.includes('email') || lower.includes('อีเมล')) autoMap.email = String(i);
           else if (lower.includes('คณะ') || lower.includes('faculty')) autoMap.faculty = String(i);
         });
@@ -146,7 +146,7 @@ export default function NoCheckinImport() {
       (r.course_code || '').toLowerCase().includes(term) ||
       (r.email || '').toLowerCase().includes(term) ||
       facName.toLowerCase().includes(term) ||
-      (r.faculty_col || '').toLowerCase().includes(term)
+      (r.faculty || '').toLowerCase().includes(term)
     );
   });
 
@@ -161,7 +161,7 @@ export default function NoCheckinImport() {
     if (r.faculty_id && r.faculty?.departments) {
       return r.faculty.departments.name_th;
     }
-    return r.faculty_col || '-';
+    return r.faculty || '-';
   };
 
   return (

@@ -30,43 +30,63 @@ router.post('/import', async (req, res) => {
     return res.status(400).json({ success: false, error: 'records must be a non-empty array' });
   }
 
-  const { data: allFaculty } = await supabase
-    .from('faculty')
-    .select('id, email, name_th, full_name_th');
+  let allFaculty = [];
+  let start = 0;
+  const limit = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('faculty')
+      .select('id, email, name_th, full_name_th')
+      .range(start, start + limit - 1);
+
+    if (error || !data || data.length === 0) {
+      hasMore = false;
+    } else {
+      allFaculty = allFaculty.concat(data);
+      if (data.length < limit) {
+        hasMore = false;
+      } else {
+        start += limit;
+      }
+    }
+  }
 
   const emailMap = {};
-  const fullNameMap = {};
   const nameMap = {};
   if (allFaculty) {
     allFaculty.forEach(f => {
-      if (f.email) emailMap[f.email.toLowerCase()] = f.id;
-      if (f.full_name_th) fullNameMap[f.full_name_th.trim()] = f.id;
-      if (f.name_th) nameMap[f.name_th.trim()] = f.id;
+      const info = { id: f.id, email: f.email || '' };
+      if (f.email) emailMap[f.email.toLowerCase()] = info;
+      if (f.name_th) nameMap[f.name_th.trim()] = info;
     });
   }
 
-  const findFacultyId = (teacherName, email) => {
+  const findFacultyInfo = (teacherName, email) => {
     if (email) {
       const byEmail = emailMap[email.trim().toLowerCase()];
       if (byEmail) return byEmail;
     }
     const name = (teacherName || '').trim();
     if (name) {
-      if (fullNameMap[name]) return fullNameMap[name];
       if (nameMap[name]) return nameMap[name];
     }
-    return null;
+    return { id: null, email: email || '' };
   };
 
-  const rows = records.map(r => ({
-    teacher_name: r.teacherName || '',
-    email: r.email || '',
-    faculty: r.faculty || '',
-    course_code: r.courseCode || '',
-    section: r.section || '',
-    time_range: r.timeRange || '',
-    faculty_id: findFacultyId(r.teacherName, r.email),
-  }));
+  const rows = records.map(r => {
+    const info = findFacultyInfo(r.teacherName, r.email);
+    return {
+      teacher_name: r.teacherName || '',
+      email: info.email || r.email || '',
+      faculty: r.faculty || '',
+      course_code: r.courseCode || '',
+      section: r.section || '',
+      time_range: r.timeRange || '',
+      faculty_id: info.id,
+    };
+  });
 
   const { error } = await supabase
     .from('no_checkin_records')

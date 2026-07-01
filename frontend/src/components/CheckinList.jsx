@@ -5,23 +5,47 @@ import { api } from '../utils/api';
 
 const ITEMS_PER_PAGE = 6;
 
-export default function CheckinList({ onNavigateToCheckin }) {
+export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
   const [records, setRecords] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
+  // Form states for modal
+  const [date, setDate] = useState('');
+  const [classroom, setClassroom] = useState('');
+  const [problemType, setProblemType] = useState('ลืมเช็กอิน');
+  const [reason, setReason] = useState('นำเข้าจากรายงานอาจารย์ไม่เช็คอิน');
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await api.getNoCheckinRecords();
-        setRecords(Array.isArray(data) ? data : []);
-      } catch { setRecords([]); }
+        const [noCheckinData, coursesData] = await Promise.all([
+          api.getNoCheckinRecords(),
+          api.getCourses()
+        ]);
+        setRecords(Array.isArray(noCheckinData) ? noCheckinData : []);
+        setCourses(Array.isArray(coursesData) ? coursesData : []);
+      } catch {
+        setRecords([]);
+        setCourses([]);
+      }
       setLoading(false);
     };
     load();
   }, []);
+
+  useEffect(() => {
+    if (selectedRecord) {
+      setDate('');
+      setClassroom('');
+      setProblemType('ลืมเช็กอิน');
+      setReason('นำเข้าจากรายงานอาจารย์ไม่เช็คอิน');
+    }
+  }, [selectedRecord]);
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -32,6 +56,14 @@ export default function CheckinList({ onNavigateToCheckin }) {
   }, [selectedRecord]);
 
   const filtered = records.filter(r => {
+    // 1. Filter by logged in user's email if they are a teacher
+    if (role === 'teacher') {
+      const recordEmail = (r.email || r.faculty?.email || '').toLowerCase().trim();
+      const loginEmail = (userEmail || '').toLowerCase().trim();
+      if (recordEmail !== loginEmail) return false;
+    }
+
+    // 2. Filter by search term
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     const facultyName = r.faculty?.full_name_th || r.faculty?.name_th || '';
@@ -49,23 +81,75 @@ export default function CheckinList({ onNavigateToCheckin }) {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const getDisplayName = (r) => {
+  function getDisplayName(r) {
     if (r.faculty_id && r.faculty) {
       return r.faculty.full_name_th || r.faculty.name_th;
     }
     return r.teacher_name;
-  };
+  }
 
-  const getDept = (r) => {
+  function getDept(r) {
     if (r.faculty_id && r.faculty?.departments) {
       return r.faculty.departments.name_th;
     }
-    return r.faculty_col || '-';
+    return r.faculty || '-';
+  }
+
+  const getCourseName = (code) => {
+    const course = courses.find(c => c.course_code === code);
+    return course ? course.course_name : code || '-';
   };
 
-  const handleSubmitRequest = () => {
-    setSelectedRecord(null);
-    if (onNavigateToCheckin) onNavigateToCheckin();
+  const handleSubmitRequest = async () => {
+    if (!date) {
+      alert('กรุณาเลือกวันที่สอน');
+      return;
+    }
+    if (!classroom.trim()) {
+      alert('กรุณากรอกห้องเรียน');
+      return;
+    }
+    if (!reason.trim()) {
+      alert('กรุณากรอกเหตุผลประกอบ');
+      return;
+    }
+
+    setSubmitting(true);
+
+    const payload = {
+      email: selectedRecord.faculty?.email || selectedRecord.email || '',
+      teacherName: getDisplayName(selectedRecord),
+      faculty: selectedRecord.faculty?.name_th || selectedRecord.faculty || '',
+      courseCode: selectedRecord.course_code,
+      courseName: getCourseName(selectedRecord.course_code),
+      section: selectedRecord.section || '',
+      date: date,
+      timeRange: selectedRecord.time_range || '',
+      classroom: classroom,
+      problemType: problemType,
+      reason: reason,
+      attachmentName: '',
+      attachmentData: '',
+    };
+
+    try {
+      const res = await api.submitRequest(payload);
+      if (res.success) {
+        // Delete from no_checkin_records since it has been converted to a request
+        await api.deleteNoCheckin(selectedRecord.id);
+        alert('ส่งคำร้องสำเร็จเรียบร้อยแล้ว!');
+        setSelectedRecord(null);
+        // Reload records
+        const data = await api.getNoCheckinRecords();
+        setRecords(Array.isArray(data) ? data : []);
+      } else {
+        alert('ไม่สามารถส่งคำร้องได้: ' + (res.error || 'เกิดข้อผิดพลาด'));
+      }
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -281,16 +365,69 @@ export default function CheckinList({ onNavigateToCheckin }) {
             </div>
 
             {selectedRecord.teacher_name && selectedRecord.faculty_id && selectedRecord.teacher_name !== (selectedRecord.faculty?.name_th || '') && (
-              <div style={{ marginBottom: '20px', padding: '12px', background: 'rgba(138, 75, 243, 0.05)', borderRadius: '8px', border: '1px solid var(--border-glow)' }}>
+              <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(138, 75, 243, 0.05)', borderRadius: '8px', border: '1px solid var(--border-glow)' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ชื่อจากไฟล์ Excel</span>
                 <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>{selectedRecord.teacher_name}</span>
               </div>
             )}
 
+            {/* Input fields for missing request details */}
+            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '16px', marginTop: '16px' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-main)' }}>ข้อมูลเพิ่มเติมสำหรับส่งคำร้อง</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>วันที่สอน *</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid var(--border-light)', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-main)' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ห้องเรียน *</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น 11-1002"
+                    value={classroom}
+                    onChange={e => setClassroom(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid var(--border-light)', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-main)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ประเภทปัญหา *</label>
+                <select
+                  value={problemType}
+                  onChange={e => setProblemType(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid var(--border-light)', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-main)' }}
+                >
+                  <option value="ลืมเช็กอิน">ลืมเช็กอิน</option>
+                  <option value="เช็กอินไม่ได้เพราะระบบขัดข้อง">เช็กอินไม่ได้เพราะระบบขัดข้อง</option>
+                  <option value="อินเทอร์เน็ต/อุปกรณ์มีปัญหา">อินเทอร์เน็ต/อุปกรณ์มีปัญหา</option>
+                  <option value="ตารางสอนไม่ตรง">ตารางสอนไม่ตรง</option>
+                  <option value="อื่น ๆ">อื่น ๆ</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>เหตุผลประกอบ *</label>
+                <textarea
+                  rows={2}
+                  placeholder="ระบุเหตุผลในการเช็กอินย้อนหลัง"
+                  value={reason}
+                  onChange={e => setReason(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid var(--border-light)', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-main)', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: '20px', marginTop: '20px' }}>
-              <button onClick={() => setSelectedRecord(null)} className="btn btn-secondary">ปิด</button>
-              <button onClick={handleSubmitRequest} className="btn btn-primary" style={{ gap: '6px' }}>
-                <Send size={16} /> ส่งคำร้อง
+              <button onClick={() => setSelectedRecord(null)} className="btn btn-secondary" disabled={submitting}>ปิด</button>
+              <button onClick={handleSubmitRequest} className="btn btn-primary" style={{ gap: '6px' }} disabled={submitting}>
+                <Send size={16} /> {submitting ? 'กำลังส่ง...' : 'ส่งคำร้อง'}
               </button>
             </div>
           </div>

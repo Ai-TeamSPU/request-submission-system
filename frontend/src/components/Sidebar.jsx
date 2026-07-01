@@ -12,6 +12,7 @@ const MENU_CATEGORIES = [
     items: [
       { id: 'checkin', name: 'กรอกข้อมูลการ Checkin ย้อนหลัง', icon: CheckSquare },
       { id: 'my-requests', name: 'คำขออนุมัติของฉัน', icon: ClipboardList },
+      { id: 'checkin-list', name: 'รายชื่ออาจารย์ที่ไม่เช็คอิน', icon: ClipboardList },
     ],
   },
   {
