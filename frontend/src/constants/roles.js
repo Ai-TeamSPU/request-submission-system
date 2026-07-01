@@ -1,17 +1,19 @@
-export const VALID_ROLES = ['teacher', 'dean', 'director', 'academic', 'admin'];
+export const VALID_ROLES = ['teacher', 'dean', 'director', 'group_director', 'academic', 'admin'];
 
 export const ROLE_LABELS = {
   teacher: 'อาจารย์ (ผู้สอน)',
   dean: 'คณบดี',
   director: 'ผอ.สำนักงานวิชาการ',
+  group_director: 'ผอ.กลุ่มงาน',
   academic: 'วิชาการ',
   admin: 'ผู้ดูแลระบบ (Admin)',
 };
 
 export const ROLE_LABELS_FULL = {
   teacher: '🧑‍🏫 อาจารย์',
-  dean: '🏛️ คณบดี / ผอ.สำนักงานวิชาการ',
-  director: 'ผอ.สำนักงานวิชาการ / ผอ.กลุ่มงาน',
+  dean: '🏛️ คณบดี',
+  director: '📋 ผอ.สำนักงานวิชาการ',
+  group_director: '👔 ผอ.กลุ่มงาน',
   academic: '🎓 วิชาการ',
   admin: '🔑 ผู้ดูแลระบบ (Admin)',
 };
@@ -22,9 +24,9 @@ export const MENU_PERMISSIONS = {
   'checkin-list': ['teacher', 'dean', 'admin'],
   'pending-approvals': ['dean', 'admin'],
   'approved-history': ['dean', 'admin'],
-  'approved-requests': ['director', 'academic', 'admin'],
+  'approved-requests': ['director', 'group_director', 'academic', 'admin'],
   'email-alerts': ['admin'],
-  'overview': ['director', 'academic', 'admin'],
+  'overview': ['director', 'group_director', 'academic', 'admin'],
   'import-excel': ['admin'],
   'import-no-checkin': ['admin'],
   'master-data': ['admin'],
@@ -49,6 +51,7 @@ export const PAGE_TITLES = {
 export const INITIAL_MENU_BY_ROLE = {
   dean: 'pending-approvals',
   director: 'approved-requests',
+  group_director: 'approved-requests',
   academic: 'approved-requests',
   admin: 'overview',
 };

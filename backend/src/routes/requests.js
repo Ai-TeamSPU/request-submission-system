@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { supabase } from '../config/supabase.js';
-import { notifyDeansNewRequest, notifyTeacherStatusUpdate } from '../services/email.js';
+import { notifyDeansNewRequest, notifyTeacherStatusUpdate, notifyDeansDailyDigest } from '../services/email.js';
 import { toSnakeCase, toCamelCase } from '../utils/fieldMapper.js';
 
 const router = Router();
@@ -56,9 +56,10 @@ router.post('/', async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 
-  notifyDeansNewRequest(newRequest).catch(err =>
-    console.error('Failed to send email to deans:', err.message)
-  );
+  // Instant notification is disabled in favor of the daily 20:00 cron digest.
+  // notifyDeansNewRequest(newRequest).catch(err =>
+  //   console.error('Failed to send email to deans:', err.message)
+  // );
 
   res.json({ success: true, requestId: newRequest.id });
 });
@@ -150,6 +151,75 @@ router.patch('/:id/complete', async (req, res) => {
   }
 
   res.json({ success: true, id, status: 'Completed' });
+});
+
+router.get('/cron/daily-digest', async (req, res) => {
+  // Check authorization for Vercel Cron.
+  const authHeader = req.headers.authorization;
+  if (process.env.NODE_ENV === 'production') {
+    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+  }
+
+  try {
+    // 1. Fetch all pending approvals
+    const { data: approvals, error: appError } = await supabase
+      .from('approvals')
+      .select('request_id')
+      .eq('status', 'Pending');
+
+    if (appError) {
+      return res.status(500).json({ success: false, error: appError.message });
+    }
+
+    if (!approvals || approvals.length === 0) {
+      return res.json({ success: true, message: 'No pending requests to notify deans.' });
+    }
+
+    const pendingIds = approvals.map(a => a.request_id);
+
+    // 2. Fetch requests details
+    const { data: requests, error: reqError } = await supabase
+      .from('requests')
+      .select('*')
+      .in('id', pendingIds);
+
+    if (reqError) {
+      return res.status(500).json({ success: false, error: reqError.message });
+    }
+
+    if (!requests || requests.length === 0) {
+      return res.json({ success: true, message: 'No pending requests details found.' });
+    }
+
+    // 3. Group requests by faculty
+    const groups = {};
+    requests.forEach(req => {
+      if (req.faculty) {
+        if (!groups[req.faculty]) groups[req.faculty] = [];
+        groups[req.faculty].push(req);
+      }
+    });
+
+    const faculties = Object.keys(groups);
+    const results = [];
+
+    // 4. Send email to each faculty's deans
+    for (const faculty of faculties) {
+      try {
+        const sendResult = await notifyDeansDailyDigest(faculty, groups[faculty]);
+        results.push({ faculty, ...sendResult });
+      } catch (err) {
+        console.error(`Failed to send daily digest for ${faculty}:`, err.message);
+        results.push({ faculty, sent: false, error: err.message });
+      }
+    }
+
+    res.json({ success: true, processed: results });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 export default router;
