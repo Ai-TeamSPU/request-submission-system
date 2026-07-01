@@ -1,6 +1,6 @@
 import { supabase } from '../_lib/supabase.js';
 
-const VALID_ROLES = ['teacher', 'dean', 'director', 'academic', 'admin'];
+const VALID_ROLES = ['teacher', 'dean', 'director', 'group_director', 'academic', 'admin'];
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {

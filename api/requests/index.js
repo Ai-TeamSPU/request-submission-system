@@ -35,9 +35,10 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ success: false, error: error.message });
 
-    notifyDeansNewRequest(newRequest).catch(err =>
-      console.error('Failed to send email to deans:', err.message)
-    );
+    // Instant email notification is disabled in favor of daily cron digest.
+    // notifyDeansNewRequest(newRequest).catch(err =>
+    //   console.error('Failed to send email to deans:', err.message)
+    // );
 
     return res.json({ success: true, requestId: newRequest.id });
   }

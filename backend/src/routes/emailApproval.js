@@ -86,6 +86,68 @@ async function checkAndUpdateStatus(requestId, status, managerNote) {
   return { success: true };
 }
 
+router.get('/batch-approve', async (req, res) => {
+  const { faculty, token } = req.query;
+
+  if (!faculty || !token) {
+    return res.send(renderHtml('ข้อมูลไม่ถูกต้อง', 'กรุณาระบุคณะและโทเค็นการอนุมัติ', '#f59e0b'));
+  }
+
+  const { valid, reason } = verifyToken(token, faculty, 'approve_all');
+  if (!valid) {
+    const msg = reason === 'expired' ? 'ลิงก์หมดอายุแล้ว กรุณาเข้าระบบเพื่อดำเนินการ' : 'ลิงก์ไม่ถูกต้อง';
+    return res.send(renderHtml('ลิงก์ไม่สามารถใช้งานได้', msg, '#f59e0b'));
+  }
+
+  try {
+    // 1. Find all requests for this faculty that have a pending approval
+    const { data: pendingRequests, error: reqError } = await supabase
+      .from('requests')
+      .select('id')
+      .eq('faculty', faculty);
+
+    if (reqError) {
+      console.error('Failed to query requests:', reqError.message);
+      return res.send(renderHtml('เกิดข้อผิดพลาด', 'ไม่สามารถค้นหารายการคำร้องได้', '#dc2626'));
+    }
+
+    if (!pendingRequests || pendingRequests.length === 0) {
+      return res.send(renderHtml('ไม่พบคำร้องที่ค้างอยู่', `ไม่พบคำร้องที่รอการอนุมัติสำหรับคณะ${faculty}`, '#f59e0b'));
+    }
+
+    const pendingIds = pendingRequests.map(r => r.id);
+
+    // 2. Update approvals in approvals table where status is Pending
+    const { data: updatedApprovals, error: appError } = await supabase
+      .from('approvals')
+      .update({ status: 'Approved', updated_at: new Date() })
+      .in('request_id', pendingIds)
+      .eq('status', 'Pending')
+      .select('request_id');
+
+    if (appError) {
+      console.error('Failed to update approvals:', appError.message);
+      return res.send(renderHtml('เกิดข้อผิดพลาด', 'ไม่สามารถอนุมัติคำร้องได้', '#dc2626'));
+    }
+
+    if (!updatedApprovals || updatedApprovals.length === 0) {
+      return res.send(renderHtml('ไม่มีคำร้องที่รออนุมัติ', 'ไม่มีคำร้องคงค้างที่รอการอนุมัติสำหรับคณะนี้', '#f59e0b'));
+    }
+
+    // 3. Send email notifications to each teacher asynchronously
+    for (const app of updatedApprovals) {
+      notifyTeacherStatusUpdate(app.request_id, 'Approved', 'อนุมัติทั้งหมดผ่านอีเมลสรุปรายวัน').catch(err =>
+        console.error(`Failed to send status email for ${app.request_id}:`, err.message)
+      );
+    }
+
+    res.send(renderHtml('อนุมัติทั้งหมดสำเร็จ', `อนุมัติคำร้องของคณะ ${faculty} ทั้งหมดเรียบร้อยแล้ว (${updatedApprovals.length} รายการ)<br>ระบบได้ส่งอีเมลแจ้งอาจารย์ผู้ยื่นคำร้องทั้งหมดแล้ว`, '#16a34a'));
+  } catch (err) {
+    console.error('Error in batch approval:', err.message);
+    res.send(renderHtml('เกิดข้อผิดพลาด', 'ระบบภายในเกิดข้อผิดพลาดในการอนุมัติ', '#dc2626'));
+  }
+});
+
 router.get('/:id/approve', async (req, res) => {
   const { id } = req.params;
   const { token } = req.query;

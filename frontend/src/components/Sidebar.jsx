@@ -24,8 +24,8 @@ const MENU_CATEGORIES = [
     ],
   },
   {
-    title: 'ผอ.สำนักงานวิชาการ / ผอ.กลุ่มงาน / วิชาการ',
-    roles: ['director', 'academic', 'admin'],
+    title: 'ผอ.วิชาการ / ผอ.กลุ่มงาน / วิชาการ',
+    roles: ['director', 'group_director', 'academic', 'admin'],
     items: [
       { id: 'approved-requests', name: 'คำขอที่อนุมัติเเล้ว', icon: BookOpen },
       { id: 'overview', name: 'ภาพรวม', icon: LayoutDashboard },

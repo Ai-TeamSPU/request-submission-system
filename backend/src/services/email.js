@@ -2,7 +2,11 @@ import { transporter, senderAddress } from '../config/email.js';
 import { supabase } from '../config/supabase.js';
 import { generateToken } from '../utils/approvalToken.js';
 
-const BASE_URL = process.env.APP_URL || `http://localhost:${process.env.PORT || 3001}`;
+const BASE_URL = process.env.APP_URL 
+  ? process.env.APP_URL 
+  : (process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : `http://localhost:${process.env.PORT || 3001}`);
 
 function buildRequestSubmittedHtml(request, hasImage, hasAttachment) {
   const approveToken = generateToken(request.id, 'approve');
@@ -194,4 +198,101 @@ export async function sendTestEmail(to) {
 
   const info = await transporter.sendMail(mailOptions);
   return { sent: true, messageId: info.messageId };
+}
+
+function buildDailyDigestHtml(faculty, requests) {
+  const dashboardUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+
+  const approveAllToken = generateToken(faculty, 'approve_all');
+  const approveAllUrl = `${BASE_URL}/api/approval/batch-approve?faculty=${encodeURIComponent(faculty)}&token=${approveAllToken}`;
+
+  let rowsHtml = '';
+  requests.forEach(req => {
+    const approveToken = generateToken(req.id, 'approve');
+    const rejectToken = generateToken(req.id, 'reject');
+    const approveUrl = `${BASE_URL}/api/approval/${req.id}/approve?token=${approveToken}`;
+    const rejectUrl = `${BASE_URL}/api/approval/${req.id}/reject?token=${rejectToken}`;
+    
+    rowsHtml += `
+      <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 12px 8px; font-weight: 600; color: #1e3a8a;">${req.id}</td>
+        <td style="padding: 12px 8px;">${req.teacher_name}</td>
+        <td style="padding: 12px 8px;">${req.course_code} - ${req.course_name} (กลุ่ม ${req.section})</td>
+        <td style="padding: 12px 8px;">${req.date}<br><span style="font-size: 12px; color: #64748b;">${req.time_range}</span></td>
+        <td style="padding: 12px 8px;">${req.problem_type}</td>
+        <td style="padding: 12px 8px; font-size: 13px; color: #475569;">${req.reason || '-'}</td>
+        <td style="padding: 12px 8px; text-align: center; white-space: nowrap;">
+          <a href="${approveUrl}" style="display: inline-block; padding: 6px 12px; background: #16a34a; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; margin-right: 4px;">อนุมัติ</a>
+          <a href="${rejectUrl}" style="display: inline-block; padding: 6px 12px; background: #dc2626; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px;">ปฏิเสธ</a>
+        </td>
+      </tr>
+    `;
+  });
+
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 850px; margin: 0 auto;">
+      <div style="background: #1e40af; color: #fff; padding: 24px; border-radius: 8px 8px 0 0;">
+        <h2 style="margin: 0; font-size: 20px;">RSMS - รายงานสรุปคำร้องใหม่รอการอนุมัติ</h2>
+        <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">คณะ${faculty} · ข้อมูล ณ วันที่ ${new Date().toLocaleDateString('th-TH')}</p>
+      </div>
+      <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; overflow-x: auto;">
+        <p style="margin: 0 0 16px; font-size: 15px; color: #334155;">เรียน คณบดีคณะ${faculty}, มีคำร้องขอเช็คอินย้อนหลังจากผู้สอนรอการพิจารณาดังต่อไปนี้:</p>
+        
+        <!-- Batch Approval Section -->
+        <div style="margin-bottom: 20px; padding: 16px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="vertical-align: middle;">
+                <h4 style="margin: 0 0 4px; color: #065f46; font-size: 15px; font-weight: bold;">ต้องการอนุมัติคำร้องทั้งหมดของคณะในคราวเดียว?</h4>
+                <p style="margin: 0; color: #047857; font-size: 13px;">สามารถกดปุ่มขวาเพื่ออนุมัติคำร้องทั้ง ${requests.length} รายการนี้ได้ทันทีโดยไม่ต้องกดทีละราย</p>
+              </td>
+              <td style="text-align: right; vertical-align: middle; width: 200px;">
+                <a href="${approveAllUrl}" style="display: inline-block; padding: 10px 20px; background: #059669; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">✅ อนุมัติทั้งหมด (${requests.length} รายการ)</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; background: #fff; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600;">รหัสคำร้อง</th>
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600;">ผู้สอน</th>
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600;">วิชา</th>
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600;">วันที่/เวลา</th>
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600;">ประเภทปัญหา</th>
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600;">เหตุผล</th>
+              <th style="padding: 12px 8px; color: #475569; font-weight: 600; text-align: center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        <div style="margin-top: 24px; text-align: center;">
+          <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;">เข้าสู่ระบบ RSMS เพื่อดูรายละเอียดทั้งหมด</a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export async function notifyDeansDailyDigest(faculty, requests) {
+  if (!transporter) return { sent: false, reason: 'Email not configured' };
+
+  const deanEmails = await getDeanEmailByFaculty(faculty);
+  if (deanEmails.length === 0) return { sent: false, reason: `No dean found for faculty: ${faculty}` };
+
+  const digestHtml = buildDailyDigestHtml(faculty, requests);
+
+  const mailOptions = {
+    from: `"RSMS ระบบคำร้องเช็คอิน" <${senderAddress}>`,
+    to: deanEmails.join(', '),
+    subject: `[RSMS] สรุปคำร้องขอเช็คอินย้อนหลังรอพิจารณา - คณะ${faculty}`,
+    html: digestHtml,
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  console.log(`Daily digest sent to deans of ${faculty}:`, info.messageId);
+  return { sent: true, messageId: info.messageId, recipients: deanEmails };
 }

@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
   res.json({ success: true, email, role, faculty });
 });
 
-const VALID_ROLES = ['teacher', 'dean', 'director', 'academic', 'admin'];
+const VALID_ROLES = ['teacher', 'dean', 'director', 'group_director', 'academic', 'admin'];
 
 router.post('/', async (req, res) => {
   const { email, role, faculty } = req.body;
