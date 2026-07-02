@@ -4,7 +4,9 @@ import { supabase } from '../config/supabase.js';
 const router = Router();
 
 router.get('/', async (req, res) => {
-  const { data, error } = await supabase
+  const { role, faculty, email } = req.query;
+
+  let query = supabase
     .from('no_checkin_records')
     .select(`
       id,
@@ -25,8 +27,15 @@ router.get('/', async (req, res) => {
         department_id,
         departments ( name_th )
       )
-    `)
-    .order('imported_at', { ascending: false });
+    `);
+
+  if (role === 'teacher' && email) {
+    query = query.eq('email', email.trim());
+  } else if (role === 'dean' && faculty) {
+    query = query.eq('faculty', faculty.trim());
+  }
+
+  const { data, error } = await query.order('imported_at', { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);

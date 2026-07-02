@@ -2,7 +2,9 @@ import { supabase } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const { data, error } = await supabase
+    const { role, faculty, email } = req.query;
+
+    let query = supabase
       .from('no_checkin_records')
       .select(`
         id,
@@ -23,8 +25,15 @@ export default async function handler(req, res) {
           department_id,
           departments ( name_th )
         )
-      `)
-      .order('imported_at', { ascending: false });
+      `);
+
+    if (role === 'teacher' && email) {
+      query = query.eq('email', email.trim());
+    } else if (role === 'dean' && faculty) {
+      query = query.eq('faculty', faculty.trim());
+    }
+
+    const { data, error } = await query.order('imported_at', { ascending: false });
 
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);

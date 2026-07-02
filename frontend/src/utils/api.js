@@ -95,7 +95,8 @@ export const api = {
   getFacultyByEmail: (email) =>
     request(`/api/faculties/by-email/${encodeURIComponent(email)}`),
 
-  getNoCheckinRecords: () => request('/api/no-checkin'),
+  getNoCheckinRecords: (role, faculty, email) =>
+    request(`/api/no-checkin?role=${role || ''}&faculty=${encodeURIComponent(faculty || '')}&email=${encodeURIComponent(email || '')}`),
 
   importNoCheckin: (records) =>
     request('/api/no-checkin/import', {

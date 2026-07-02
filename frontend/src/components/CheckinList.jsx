@@ -24,7 +24,7 @@ export default function CheckinList({ userEmail, role, userFaculty, onNavigateTo
     const load = async () => {
       try {
         const [noCheckinData, coursesData] = await Promise.all([
-          api.getNoCheckinRecords(),
+          api.getNoCheckinRecords(role, userFaculty, userEmail),
           api.getCourses()
         ]);
         setRecords(Array.isArray(noCheckinData) ? noCheckinData : []);
@@ -36,7 +36,7 @@ export default function CheckinList({ userEmail, role, userFaculty, onNavigateTo
       setLoading(false);
     };
     load();
-  }, []);
+  }, [role, userFaculty, userEmail]);
 
   useEffect(() => {
     if (selectedRecord) {
@@ -148,7 +148,7 @@ export default function CheckinList({ userEmail, role, userFaculty, onNavigateTo
         alert('ส่งคำร้องสำเร็จเรียบร้อยแล้ว!');
         setSelectedRecord(null);
         // Reload records
-        const data = await api.getNoCheckinRecords();
+        const data = await api.getNoCheckinRecords(role, userFaculty, userEmail);
         setRecords(Array.isArray(data) ? data : []);
       } else {
         alert('ไม่สามารถส่งคำร้องได้: ' + (res.error || 'เกิดข้อผิดพลาด'));
