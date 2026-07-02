@@ -156,7 +156,7 @@ router.patch('/:id/complete', async (req, res) => {
 router.get('/cron/daily-digest', async (req, res) => {
   // Check authorization for Vercel Cron.
   const authHeader = req.headers.authorization;
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && process.env.CRON_SECRET) {
     if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
