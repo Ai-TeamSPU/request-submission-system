@@ -194,7 +194,7 @@ export default function App() {
       case 'my-requests':
         return <RequestsTable requests={requests} role="employee" userEmail={userEmail} />;
       case 'checkin-list':
-        return <CheckinList userEmail={userEmail} role={role} onNavigateToCheckin={() => setActiveMenu('checkin')} />;
+        return <CheckinList userEmail={userEmail} role={role} userFaculty={userFaculty} onNavigateToCheckin={() => setActiveMenu('checkin')} />;
       case 'pending-approvals': {
         const pending = requests.filter(r => r.status === 'Pending');
         const filtered = (role === 'dean' && userFaculty)

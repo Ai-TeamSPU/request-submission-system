@@ -5,7 +5,7 @@ import { api } from '../utils/api';
 
 const ITEMS_PER_PAGE = 6;
 
-export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
+export default function CheckinList({ userEmail, role, userFaculty, onNavigateToCheckin }) {
   const [records, setRecords] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +61,13 @@ export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
       const recordEmail = (r.email || r.faculty?.email || '').toLowerCase().trim();
       const loginEmail = (userEmail || '').toLowerCase().trim();
       if (recordEmail !== loginEmail) return false;
+    }
+
+    // 2. Filter by faculty if they are a dean
+    if (role === 'dean') {
+      const recordFaculty = (r.faculty_col || '').toLowerCase().trim();
+      const deanFaculty = (userFaculty || '').toLowerCase().trim();
+      if (recordFaculty !== deanFaculty) return false;
     }
 
     // 2. Filter by search term
