@@ -67,6 +67,7 @@ export default async function handler(req, res) {
       section: r.section || '',
       time_range: r.timeRange || '',
       faculty_id: info.id,
+      date: r.date || null,
     };
   });
 

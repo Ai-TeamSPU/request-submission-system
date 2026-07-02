@@ -10,6 +10,7 @@ const FIELDS = [
   { key: 'timeRange', label: 'เวลาเรียน' },
   { key: 'email', label: 'อีเมล' },
   { key: 'faculty', label: 'ชื่อคณะ' },
+  { key: 'date', label: 'วันที่สอน' },
 ];
 
 export default function NoCheckinImport() {
@@ -43,7 +44,7 @@ export default function NoCheckinImport() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const wb = XLSX.read(evt.target.result, { type: 'array' });
+        const wb = XLSX.read(evt.target.result, { type: 'array', cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
@@ -65,6 +66,7 @@ export default function NoCheckinImport() {
           else if ((lower.includes('เวลา') || lower.includes('time') || lower.includes('คาบ')) && !lower.includes('เช็คอิน') && !lower.includes('เช็กอิน') && !lower.includes('checkin')) autoMap.timeRange = String(i);
           else if (lower.includes('email') || lower.includes('อีเมล')) autoMap.email = String(i);
           else if (lower.includes('คณะ') || lower.includes('faculty')) autoMap.faculty = String(i);
+          else if (lower.includes('วันที่') || lower.includes('date') || lower.includes('วันสอน')) autoMap.date = String(i);
         });
         setColMap(autoMap);
         setStep('mapping');
@@ -75,12 +77,53 @@ export default function NoCheckinImport() {
     reader.readAsArrayBuffer(file);
   };
 
+  const parseExcelDate = (val) => {
+    if (val === undefined || val === null || val === '') return '';
+    
+    // If it's already a JS Date object (e.g. from cellDates: true)
+    if (val instanceof Date) {
+      const year = val.getFullYear();
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // If it's a number (Excel date serial)
+    const num = Number(val);
+    if (!isNaN(num) && num > 30000 && num < 60000) {
+      const date = new Date(Math.round((num - 25569) * 86400 * 1000));
+      const year = date.getUTFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // If it's a string, try parsing it
+    const str = String(val).trim();
+    if (str) {
+      const parsed = new Date(str);
+      if (!isNaN(parsed.getTime())) {
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+    return str;
+  };
+
   const previewData = () => {
     return rows.slice(0, 8).map(r => {
       const obj = {};
       FIELDS.forEach(f => {
         const idx = colMap[f.key];
-        obj[f.key] = idx !== undefined && idx !== '' ? String(r[Number(idx)] ?? '').trim() : '-';
+        const rawVal = idx !== undefined && idx !== '' ? r[Number(idx)] : undefined;
+        
+        if (f.key === 'date') {
+          obj[f.key] = rawVal !== undefined ? (parseExcelDate(rawVal) || '-') : '-';
+        } else {
+          obj[f.key] = rawVal !== undefined && rawVal !== null && rawVal !== '' ? String(rawVal).trim() : '-';
+        }
       });
       return obj;
     });
@@ -98,7 +141,13 @@ export default function NoCheckinImport() {
       const obj = {};
       FIELDS.forEach(f => {
         const idx = colMap[f.key];
-        obj[f.key] = idx !== undefined && idx !== '' ? String(r[Number(idx)] ?? '').trim() : '';
+        const rawVal = idx !== undefined && idx !== '' ? r[Number(idx)] : undefined;
+        
+        if (f.key === 'date') {
+          obj[f.key] = rawVal !== undefined ? parseExcelDate(rawVal) : '';
+        } else {
+          obj[f.key] = rawVal !== undefined && rawVal !== null && rawVal !== '' ? String(rawVal).trim() : '';
+        }
       });
       return obj;
     }).filter(r => r.teacherName || r.courseCode);
@@ -295,7 +344,7 @@ export default function NoCheckinImport() {
           </div>
         ) : (
           <div style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '800px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '850px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left', width: '40px' }}>#</th>
@@ -303,6 +352,7 @@ export default function NoCheckinImport() {
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>ชื่ออาจารย์</th>
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>รหัสวิชา</th>
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>กลุ่ม</th>
+                  <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>วันที่สอน</th>
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>เวลาเรียน</th>
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>อีเมล</th>
                   <th style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'left' }}>ต้นสังกัด</th>
@@ -328,6 +378,7 @@ export default function NoCheckinImport() {
                     </td>
                     <td style={{ padding: '8px 10px' }}>{r.course_code}</td>
                     <td style={{ padding: '8px 10px' }}>{r.section}</td>
+                    <td style={{ padding: '8px 10px' }}>{r.date ? new Date(r.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}</td>
                     <td style={{ padding: '8px 10px' }}>{r.time_range}</td>
                     <td style={{ padding: '8px 10px', fontSize: '12px', color: 'var(--text-muted)' }}>
                       {r.faculty_id && r.faculty?.email ? r.faculty.email : r.email}

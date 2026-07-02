@@ -263,7 +263,14 @@ export default function App() {
         <Header email={userEmail} role={role} onLogout={handleLogout} theme={theme} onToggleTheme={toggleTheme} />
         <main id="main-content">
           <div className="page-title-bar">
-            <h2>{PAGE_TITLES[activeMenu] || 'หน้าหลัก'}</h2>
+            <h2>
+              {PAGE_TITLES[activeMenu] || 'หน้าหลัก'}
+              {activeMenu === 'checkin-list' && (
+                <span style={{ color: 'var(--text-muted)', marginLeft: '10px' }}>
+                  (ระบบจะดึงข้อมูลทุกๆวันที่ 15 ของเดือน)
+                </span>
+              )}
+            </h2>
           </div>
           {renderContent()}
         </main>

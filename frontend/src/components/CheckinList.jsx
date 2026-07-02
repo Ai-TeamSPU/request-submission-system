@@ -40,7 +40,7 @@ export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
 
   useEffect(() => {
     if (selectedRecord) {
-      setDate('');
+      setDate(selectedRecord.date || '');
       setClassroom('');
       setProblemType('ลืมเช็กอิน');
       setReason('นำเข้าจากรายงานอาจารย์ไม่เช็คอิน');
@@ -92,7 +92,7 @@ export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
     if (r.faculty_id && r.faculty?.departments) {
       return r.faculty.departments.name_th;
     }
-    return r.faculty || '-';
+    return r.faculty_col || '-';
   }
 
   const getCourseName = (code) => {
@@ -119,7 +119,8 @@ export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
     const payload = {
       email: selectedRecord.faculty?.email || selectedRecord.email || '',
       teacherName: getDisplayName(selectedRecord),
-      faculty: selectedRecord.faculty?.name_th || selectedRecord.faculty || '',
+      faculty: selectedRecord.faculty_col || '',
+      department: selectedRecord.faculty?.departments?.name_th || '-',
       courseCode: selectedRecord.course_code,
       courseName: getCourseName(selectedRecord.course_code),
       section: selectedRecord.section || '',
@@ -374,7 +375,7 @@ export default function CheckinList({ userEmail, role, onNavigateToCheckin }) {
             {/* Input fields for missing request details */}
             <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '16px', marginTop: '16px' }}>
               <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-main)' }}>ข้อมูลเพิ่มเติมสำหรับส่งคำร้อง</h4>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>วันที่สอน *</label>
