@@ -5,7 +5,16 @@ export default async function handler(req, res) {
     const { data, error } = await supabase
       .from('no_checkin_records')
       .select(`
-        *,
+        id,
+        teacher_name,
+        faculty_col:faculty,
+        course_code,
+        section,
+        time_range,
+        email,
+        faculty_id,
+        date,
+        imported_at,
         faculty (
           id,
           name_th,
