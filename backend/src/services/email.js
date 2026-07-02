@@ -201,7 +201,13 @@ export async function sendTestEmail(to) {
 }
 
 function buildDailyDigestHtml(faculty, requests) {
-  const dashboardUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  const dashboardUrl = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN
+    : (process.env.APP_URL
+        ? process.env.APP_URL
+        : (process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : 'http://localhost:5173'));
 
   const approveAllToken = generateToken(faculty, 'approve_all');
   const approveAllUrl = `${BASE_URL}/api/approval/batch-approve?faculty=${encodeURIComponent(faculty)}&token=${approveAllToken}`;
